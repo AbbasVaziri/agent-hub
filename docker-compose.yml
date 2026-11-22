@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: agent-hub-postgres
+    environment:
+      POSTGRES_USER: agenthub
+      POSTGRES_PASSWORD: agenthub
+      POSTGRES_DB: agenthub
+    ports:
+      - "127.0.0.1:5440:5432"
+    volumes:
+      - agent-hub-pg:/var/lib/postgresql/data
+      - ./scripts/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenthub"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  agent-hub-pg:

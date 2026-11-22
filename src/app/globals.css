@@ -1,0 +1,270 @@
+@import "tailwindcss";
+@import "@fontsource-variable/vazirmatn";
+
+/* Tokens come from DESIGN.md. Light is the default; dark applies by system preference or explicit choice. */
+:root {
+  --paper: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #efece5;
+  --ink: #1e1c19;
+  --muted: #5e5951;
+  --line: #e2ded5;
+  --line-strong: #cfc9bd;
+  --accent: #0e6b63;
+  --accent-ink: #ffffff;
+  --accent-soft: #e1efed;
+  --danger: #a3332b;
+  --danger-soft: #f6e4e1;
+  --focus: #0e6b63;
+  --seal-firoozeh: #0e6b63;
+  --seal-lapis: #2f4b8a;
+  --seal-saffron: #8a5d0c;
+  --seal-pomegranate: #8e2f3a;
+  --seal-olive: #546428;
+  --seal-slate: #4a5361;
+  --code-bg: #efece5;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151412;
+    --surface: #1d1b18;
+    --surface-2: #26231f;
+    --ink: #ece8e1;
+    --muted: #a8a196;
+    --line: #2e2b27;
+    --line-strong: #403c36;
+    --accent: #4fb3a6;
+    --accent-ink: #0d1514;
+    --accent-soft: #1c302d;
+    --danger: #e07a70;
+    --danger-soft: #3a201d;
+    --focus: #4fb3a6;
+    --seal-firoozeh: #4fb3a6;
+    --seal-lapis: #8ea6e0;
+    --seal-saffron: #d8a650;
+    --seal-pomegranate: #e08a95;
+    --seal-olive: #a9bd72;
+    --seal-slate: #a3adbd;
+    --code-bg: #24211d;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #151412;
+  --surface: #1d1b18;
+  --surface-2: #26231f;
+  --ink: #ece8e1;
+  --muted: #a8a196;
+  --line: #2e2b27;
+  --line-strong: #403c36;
+  --accent: #4fb3a6;
+  --accent-ink: #0d1514;
+  --accent-soft: #1c302d;
+  --danger: #e07a70;
+  --danger-soft: #3a201d;
+  --focus: #4fb3a6;
+  --seal-firoozeh: #4fb3a6;
+  --seal-lapis: #8ea6e0;
+  --seal-saffron: #d8a650;
+  --seal-pomegranate: #e08a95;
+  --seal-olive: #a9bd72;
+  --seal-slate: #a3adbd;
+  --code-bg: #24211d;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: "Vazirmatn Variable", "Vazirmatn", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --radius-seal: 4px;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100dvh;
+  }
+  a[href],
+  button:not(:disabled),
+  summary,
+  select:not(:disabled),
+  label[for],
+  [role="button"],
+  [role="tab"],
+  [role="switch"],
+  [role="option"],
+  [role="menuitem"],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Chat reading column: Markdown output. Code blocks always run left to right. */
+.prose-chat {
+  line-height: 1.85;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.prose-chat > * + * {
+  margin-top: 0.75em;
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  font-weight: 700;
+  line-height: 1.4;
+  margin-top: 1.2em;
+}
+.prose-chat h1 {
+  font-size: 1.25rem;
+}
+.prose-chat h2 {
+  font-size: 1.125rem;
+}
+.prose-chat ul,
+.prose-chat ol {
+  padding-inline-start: 1.4em;
+}
+.prose-chat ul {
+  list-style: disc;
+}
+.prose-chat ol {
+  list-style: decimal;
+}
+.prose-chat a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-chat blockquote {
+  border-inline-start: 2px solid var(--line-strong);
+  padding-inline-start: 0.9em;
+  color: var(--muted);
+}
+.prose-chat table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.prose-chat th,
+.prose-chat td {
+  border: 1px solid var(--line);
+  padding: 0.35em 0.6em;
+  text-align: start;
+}
+.prose-chat :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  unicode-bidi: isolate;
+}
+.prose-chat pre {
+  direction: ltr;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 0.9em 1em;
+  overflow-x: auto;
+}
+
+/* highlight.js tokens mapped onto the palette instead of a stock theme. */
+.hljs-comment,
+.hljs-quote {
+  color: var(--muted);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in {
+  color: var(--seal-lapis);
+}
+.hljs-string,
+.hljs-attr,
+.hljs-template-tag {
+  color: var(--seal-olive);
+}
+.hljs-number,
+.hljs-literal {
+  color: var(--seal-saffron);
+}
+.hljs-title,
+.hljs-function,
+.hljs-section {
+  color: var(--seal-pomegranate);
+}
+
+@keyframes settle {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-settle {
+  animation: settle 200ms ease-out;
+}
+.caret::after,
+.streaming > .prose-chat > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 0.5ch;
+  height: 1.1em;
+  margin-inline-start: 2px;
+  vertical-align: text-bottom;
+  background: var(--muted);
+}
