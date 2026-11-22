@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -13,12 +14,18 @@ import { can } from "@/lib/workspaces/permissions";
 import { cn } from "@/lib/utils";
 import { useI18n } from "../i18n-provider";
 import { useSession } from "../shell/session-context";
-import { Button, buttonClass } from "../ui/button";
-import { Dialog } from "../ui/dialog";
-import { Checkbox, Field, Input, Select, Textarea } from "../ui/field";
-import { Seal } from "../ui/seal";
-import { EmptyState, ErrorState, Loading } from "../ui/states";
-import { useToast } from "../ui/toast";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { AppDialog } from "../app/app-dialog";
+import { CheckboxField, FormField } from "@/components/app/form-field";
+import { Field, FieldContent, FieldDescription, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Seal } from "../app/seal";
+import { EmptyState, ErrorState, Loading } from "../app/states";
+import { toast } from "sonner";
 
 type FormIn = z.input<typeof agentInputSchema>;
 type FormOut = z.output<typeof agentInputSchema>;
@@ -29,7 +36,8 @@ const DEFAULTS: FormIn = { ...agentInputSchema.parse({ name: "x" }), name: "" };
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-6 border-t border-line pt-6">
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-6">
+      <Separator className="mb-6" />
       <h2 id={`${id}-h`} className="text-[17px] font-semibold">
         {title}
       </h2>
@@ -43,7 +51,6 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
   const session = useSession();
   const router = useRouter();
   const qc = useQueryClient();
-  const toast = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -89,7 +96,7 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
       void qc.invalidateQueries({ queryKey: ["agents"] });
       router.push(`/agents/${a.id}`);
     },
-    onError: () => toast(t.common.errorGeneric, "error"),
+    onError: () => toast.error(t.common.errorGeneric),
   });
   const remove = useMutation({
     mutationFn: () => api(`/api/agents/${agentId}`, { method: "DELETE" }),
@@ -97,7 +104,7 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
       void qc.invalidateQueries({ queryKey: ["agents"] });
       router.replace("/agents");
     },
-    onError: (e) => toast(e instanceof ApiRequestError ? e.message : t.common.errorGeneric, "error"),
+    onError: (e) => toast.error(e instanceof ApiRequestError ? e.message : t.common.errorGeneric),
   });
 
   if (agentsQ.isPending) return <Loading className="px-8" label={t.common.loading} />;
@@ -105,7 +112,7 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
   if (agentId && !existing)
     return (
       <div className="px-8 py-10">
-        <EmptyState title={t.agents.notFound} body="" action={<Link href="/agents" className={buttonClass()}>{t.common.back}</Link>} />
+        <EmptyState title={t.agents.notFound} body="" action={<Link href="/agents" className={buttonVariants({ variant: "outline" })}>{t.common.back}</Link>} />
       </div>
     );
 
@@ -126,26 +133,28 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
       render={({ field: c }) => {
         const value = c.value ?? [];
         return candidates.length === 0 ? (
-          <p className="text-[14px] text-muted">{t.agents.noTargets}</p>
+          <p className="text-[14px] text-muted-foreground">{t.agents.noTargets}</p>
         ) : (
-          <fieldset className="space-y-2">
-            <legend className="mb-2 text-[13px] font-medium">{field === "delegationTargets" ? t.agents.delegationTargets : t.agents.handoffTargets}</legend>
+          <FieldSet className="gap-3">
+            <FieldLegend variant="label" className="text-[13px]">
+              {field === "delegationTargets" ? t.agents.delegationTargets : t.agents.handoffTargets}
+            </FieldLegend>
             {candidates.map((a) => (
-              <Checkbox
+              <CheckboxField
                 key={a.id}
                 disabled={readOnly}
                 checked={value.includes(a.id)}
-                onChange={(e) => c.onChange(e.target.checked ? [...value, a.id] : value.filter((x) => x !== a.id))}
+                onCheckedChange={(on) => c.onChange(on ? [...value, a.id] : value.filter((x) => x !== a.id))}
                 label={
                   <span className="inline-flex items-center gap-2">
                     <Seal name={a.name} color={a.avatar} size="sm" />
                     <span dir="auto">{a.name}</span>
-                    <span className="text-[13px] text-muted">{t.agents.modes[a.mode]}</span>
+                    <span className="text-[13px] text-muted-foreground">{t.agents.modes[a.mode]}</span>
                   </span>
                 }
               />
             ))}
-          </fieldset>
+          </FieldSet>
         );
       }}
     />
@@ -163,24 +172,24 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
         {agentId && !readOnly && (
           <div className="flex gap-2">
             {can(session.role, "agents.create") && (
-              <Button onClick={() => duplicate.mutate()} disabled={duplicate.isPending}>
+              <Button variant="outline" onClick={() => duplicate.mutate()} disabled={duplicate.isPending}>
                 {t.agents.duplicate}
               </Button>
             )}
-            <Button variant="danger" onClick={() => setDeleteOpen(true)}>
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
               {t.common.delete}
             </Button>
           </div>
         )}
       </div>
-      {readOnly && <p className="mt-3 text-[14px] text-muted">{t.agents.readOnly}</p>}
+      {readOnly && <p className="mt-3 text-[14px] text-muted-foreground">{t.agents.readOnly}</p>}
 
       <div className="mt-8 lg:grid lg:grid-cols-[11rem_1fr] lg:gap-10">
         <nav aria-label={t.agents.title} className="hidden lg:block">
           <ul className="sticky top-6 space-y-1 text-[14px]">
             {sections.map(([id, label]) => (
               <li key={id}>
-                <a href={`#${id}`} className="block rounded-[var(--radius-control)] px-2 py-1.5 text-muted hover:bg-surface-2 hover:text-ink">
+                <a href={`#${id}`} className="block rounded-md px-2 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
                   {label}
                 </a>
               </li>
@@ -189,89 +198,113 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
         </nav>
 
         <form onSubmit={form.handleSubmit((v) => save.mutate(v))} className="max-w-2xl space-y-8" noValidate>
-          <fieldset disabled={readOnly} className="space-y-8">
+          <FieldSet disabled={readOnly} className="gap-8">
             <Section id="general" title={t.agents.sections.general}>
-              <Field label={t.agents.name} error={errs.name && t.agents.name}>
+              <FormField label={t.agents.name} error={errs.name && t.agents.name}>
                 {(a) => <Input {...a} dir="auto" maxLength={60} placeholder={t.agents.name} {...form.register("name")} />}
-              </Field>
-              <Field label={t.agents.description} optional={t.common.optional}>
+              </FormField>
+              <FormField label={t.agents.description} optional={t.common.optional}>
                 {(a) => <Input {...a} dir="auto" maxLength={300} {...form.register("description")} />}
-              </Field>
+              </FormField>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label={t.agents.role} optional={t.common.optional}>
+                <FormField label={t.agents.role} optional={t.common.optional}>
                   {(a) => <Input {...a} dir="auto" maxLength={80} placeholder={t.agents.rolePlaceholder} {...form.register("role")} />}
-                </Field>
-                <Field label={t.agents.tone}>
+                </FormField>
+                <FormField label={t.agents.tone}>
                   {(a) => (
-                    <Select {...a} {...form.register("tone")}>
+                    <NativeSelect {...a} {...form.register("tone")}>
                       {TONES.map((x) => (
-                        <option key={x} value={x}>
+                        <NativeSelectOption key={x} value={x}>
                           {t.agents.tones[x]}
-                        </option>
+                        </NativeSelectOption>
                       ))}
-                    </Select>
+                    </NativeSelect>
                   )}
-                </Field>
+                </FormField>
               </div>
-              <Field label={t.agents.personality} optional={t.common.optional}>
+              <FormField label={t.agents.personality} optional={t.common.optional}>
                 {(a) => <Textarea {...a} dir="auto" rows={2} maxLength={500} {...form.register("personality")} />}
-              </Field>
-              <fieldset>
-                <legend className="mb-2 text-[13px] font-medium">{t.agents.seal}</legend>
-                <div className="flex flex-wrap gap-2">
-                  {SEAL_COLORS.map((c) => (
-                    <label key={c} className="cursor-pointer">
-                      <input type="radio" value={c} aria-label={t.agents.sealColors[c]} className="peer sr-only" {...form.register("avatar")} />
-                      <span className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-line px-2.5 py-1.5 text-[13px] peer-checked:border-ink peer-checked:font-semibold peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--focus)]">
-                        <Seal name={form.watch("name") || "?"} color={c} size="sm" />
-                        {t.agents.sealColors[c]}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend className="mb-2 text-[13px] font-medium">{t.agents.mode}</legend>
-                <div className="space-y-2">
-                  {(["primary", "subagent", "all"] as const).map((m) => (
-                    <label key={m} className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-control)] border border-line px-3 py-2.5 has-[:checked]:border-ink">
-                      <input type="radio" value={m} className="mt-1.5 h-4 w-4 accent-[var(--ink)]" {...form.register("mode")} />
-                      <span>
-                        <span className="block text-[15px] font-medium">{t.agents.modes[m]}</span>
-                        <span className="block text-[13px] leading-6 text-muted">{t.agents.modeHelp[m]}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <Checkbox label={t.agents.isActive} {...form.register("isActive")} />
+              </FormField>
+              <FieldSet>
+                <FieldLegend variant="label" className="text-[13px]">
+                  {t.agents.seal}
+                </FieldLegend>
+                <Controller
+                  control={form.control}
+                  name="avatar"
+                  render={({ field }) => (
+                    <RadioGroup value={field.value} onValueChange={field.onChange} disabled={readOnly} className="flex flex-wrap gap-2">
+                      {SEAL_COLORS.map((c) => (
+                        <FieldLabel
+                          key={c}
+                          htmlFor={`seal-${c}`}
+                          className="w-auto! cursor-pointer rounded-md border px-2.5 py-1.5 has-data-[state=checked]:border-foreground has-data-[state=checked]:font-semibold"
+                        >
+                          <RadioGroupItem id={`seal-${c}`} value={c} className="sr-only" />
+                          <Seal name={form.watch("name") || "?"} color={c} size="sm" />
+                          <span className="text-[13px]">{t.agents.sealColors[c]}</span>
+                        </FieldLabel>
+                      ))}
+                    </RadioGroup>
+                  )}
+                />
+              </FieldSet>
+              <FieldSet>
+                <FieldLegend variant="label" className="text-[13px]">
+                  {t.agents.mode}
+                </FieldLegend>
+                <Controller
+                  control={form.control}
+                  name="mode"
+                  render={({ field }) => (
+                    <RadioGroup value={field.value} onValueChange={field.onChange} disabled={readOnly} className="gap-2">
+                      {(["primary", "subagent", "all"] as const).map((m) => (
+                        <FieldLabel key={m} htmlFor={`mode-${m}`} className="has-data-[state=checked]:border-foreground has-data-[state=checked]:bg-transparent">
+                          <Field orientation="horizontal" className="items-start">
+                            <RadioGroupItem id={`mode-${m}`} value={m} className="mt-1" />
+                            <FieldContent>
+                              <FieldTitle className="text-[15px]">{t.agents.modes[m]}</FieldTitle>
+                              <FieldDescription className="text-[13px] leading-6">{t.agents.modeHelp[m]}</FieldDescription>
+                            </FieldContent>
+                          </Field>
+                        </FieldLabel>
+                      ))}
+                    </RadioGroup>
+                  )}
+                />
+              </FieldSet>
+              <Controller
+                control={form.control}
+                name="isActive"
+                render={({ field }) => <CheckboxField label={t.agents.isActive} checked={!!field.value} onCheckedChange={field.onChange} disabled={readOnly} />}
+              />
             </Section>
 
             <Section id="instructions" title={t.agents.sections.instructions}>
-              <Field label={t.agents.instructions} hint={t.agents.instructionsHelp}>
+              <FormField label={t.agents.instructions} hint={t.agents.instructionsHelp}>
                 {(a) => <Textarea {...a} dir="auto" rows={10} maxLength={8000} className="font-[inherit]" {...form.register("instructions")} />}
-              </Field>
+              </FormField>
             </Section>
 
             <Section id="model" title={t.agents.sections.model}>
               {providersQ.data && providersQ.data.length === 0 ? (
-                <p className="text-[14px] text-muted">
+                <p className="text-[14px] text-muted-foreground">
                   {t.agents.noProviders}{" "}
                   {can(session.role, "providers.manage") && (
-                    <Link href="/providers" className="text-ink underline underline-offset-4">
+                    <Link href="/providers" className="text-foreground underline underline-offset-4">
                       {t.chat.addProvider}
                     </Link>
                   )}
                 </p>
               ) : (
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label={t.agents.provider}>
+                  <FormField label={t.agents.provider}>
                     {(a) => (
                       <Controller
                         control={form.control}
                         name="providerConnectionId"
                         render={({ field }) => (
-                          <Select
+                          <NativeSelect
                             {...a}
                             value={field.value ?? ""}
                             onChange={(e) => {
@@ -279,35 +312,35 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
                               form.setValue("model", null);
                             }}
                           >
-                            <option value="">{t.common.none}</option>
+                            <NativeSelectOption value="">{t.common.none}</NativeSelectOption>
                             {providersQ.data?.map((p) => (
-                              <option key={p.id} value={p.id}>
+                              <NativeSelectOption key={p.id} value={p.id}>
                                 {p.label}
-                              </option>
+                              </NativeSelectOption>
                             ))}
-                          </Select>
+                          </NativeSelect>
                         )}
                       />
                     )}
-                  </Field>
-                  <Field label={t.agents.model}>
+                  </FormField>
+                  <FormField label={t.agents.model}>
                     {(a) => (
                       <Controller
                         control={form.control}
                         name="model"
                         render={({ field }) => (
-                          <Select {...a} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value || null)} disabled={!provider} dir="ltr">
-                            <option value="">{`${t.agents.modelDefault}${provider?.defaultModel ? ` (${provider.defaultModel})` : ""}`}</option>
+                          <NativeSelect {...a} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value || null)} disabled={!provider} dir="ltr">
+                            <NativeSelectOption value="">{`${t.agents.modelDefault}${provider?.defaultModel ? ` (${provider.defaultModel})` : ""}`}</NativeSelectOption>
                             {provider?.models.map((m) => (
-                              <option key={m.id} value={m.id}>
+                              <NativeSelectOption key={m.id} value={m.id}>
                                 {m.label ?? m.id}
-                              </option>
+                              </NativeSelectOption>
                             ))}
-                          </Select>
+                          </NativeSelect>
                         )}
                       />
                     )}
-                  </Field>
+                  </FormField>
                 </div>
               )}
             </Section>
@@ -319,25 +352,31 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
                 render={({ field }) => {
                   const value = field.value ?? [];
                   return (
-                    <fieldset className="space-y-3">
-                      <legend className="mb-2 text-[13px] font-medium">{t.agents.tools}</legend>
+                    <FieldSet className="gap-3">
+                      <FieldLegend variant="label" className="text-[13px]">
+                        {t.agents.tools}
+                      </FieldLegend>
                       {(toolsQ.data ?? [])
                         .filter((x) => x.kind === "builtin")
                         .map((tool) => (
-                          <Checkbox
+                          <CheckboxField
                             key={tool.name}
                             disabled={readOnly}
                             checked={value.includes(tool.name)}
-                            onChange={(e) => field.onChange(e.target.checked ? [...value, tool.name] : value.filter((x) => x !== tool.name))}
+                            onCheckedChange={(on) => field.onChange(on ? [...value, tool.name] : value.filter((x) => x !== tool.name))}
                             label={tool.label[locale]}
                             hint={tool.description}
                           />
                         ))}
-                    </fieldset>
+                    </FieldSet>
                   );
                 }}
               />
-              <Checkbox label={t.agents.requireApproval} {...form.register("requireApproval")} />
+              <Controller
+                control={form.control}
+                name="requireApproval"
+                render={({ field }) => <CheckboxField label={t.agents.requireApproval} checked={!!field.value} onCheckedChange={field.onChange} disabled={readOnly} />}
+              />
             </Section>
 
             {mode !== "subagent" ? (
@@ -350,24 +389,24 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
                 </Section>
               </>
             ) : (
-              <p className="text-[14px] text-muted">{t.agents.subagentNoTargets}</p>
+              <p className="text-[14px] text-muted-foreground">{t.agents.subagentNoTargets}</p>
             )}
 
             <Section id="limits" title={t.agents.sections.limits}>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label={t.agents.maxIterations} error={errs.maxIterations && "1–20"}>
+                <FormField label={t.agents.maxIterations} error={errs.maxIterations && "1–20"}>
                   {(a) => <Input {...a} type="number" min={1} max={20} dir="ltr" {...form.register("maxIterations", { valueAsNumber: true })} />}
-                </Field>
-                <Field label={t.agents.maxToolCalls} error={errs.maxToolCalls && "0–40"}>
+                </FormField>
+                <FormField label={t.agents.maxToolCalls} error={errs.maxToolCalls && "0–40"}>
                   {(a) => <Input {...a} type="number" min={0} max={40} dir="ltr" {...form.register("maxToolCalls", { valueAsNumber: true })} />}
-                </Field>
-                <Field label={t.agents.maxOutputTokens} error={errs.maxOutputTokens && "64–32000"}>
+                </FormField>
+                <FormField label={t.agents.maxOutputTokens} error={errs.maxOutputTokens && "64–32000"}>
                   {(a) => <Input {...a} type="number" min={64} max={32000} dir="ltr" {...form.register("maxOutputTokens", { valueAsNumber: true })} />}
-                </Field>
-                <Field label={t.agents.maxEstimatedCost} error={errs.maxEstimatedCost && "0–10"}>
+                </FormField>
+                <FormField label={t.agents.maxEstimatedCost} error={errs.maxEstimatedCost && "0–10"}>
                   {(a) => <Input {...a} type="number" step="0.01" min={0} max={10} dir="ltr" {...form.register("maxEstimatedCost", { valueAsNumber: true })} />}
-                </Field>
-                <Field label={t.agents.timeoutSeconds} error={errs.timeoutMs && "5–600"}>
+                </FormField>
+                <FormField label={t.agents.timeoutSeconds} error={errs.timeoutMs && "5–600"}>
                   {(a) => (
                     <Controller
                       control={form.control}
@@ -385,22 +424,22 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
                       )}
                     />
                   )}
-                </Field>
+                </FormField>
               </div>
             </Section>
-          </fieldset>
+          </FieldSet>
 
           {serverError && (
-            <p role="alert" className="rounded-[var(--radius-control)] bg-danger-soft px-3 py-2 text-[14px] text-danger">
-              {serverError}
-            </p>
+            <Alert variant="destructive" className="bg-destructive-soft">
+              <AlertDescription className="text-[14px]">{serverError}</AlertDescription>
+            </Alert>
           )}
           {!readOnly && (
-            <div className={cn("sticky bottom-0 -mx-4 flex gap-2 border-t border-line bg-paper px-4 py-3 sm:mx-0 sm:px-0")}>
-              <Button type="submit" variant="primary" disabled={save.isPending}>
+            <div className={cn("sticky bottom-0 -mx-4 flex gap-2 border-t border-border bg-background px-4 py-3 sm:mx-0 sm:px-0")}>
+              <Button type="submit" variant="default" disabled={save.isPending}>
                 {save.isPending ? t.common.saving : agentId ? t.common.save : t.agents.createAction}
               </Button>
-              <Link href="/agents" className={buttonClass({ variant: "ghost" })}>
+              <Link href="/agents" className={buttonVariants({ variant: "ghost" })}>
                 {t.common.cancel}
               </Link>
             </div>
@@ -408,14 +447,14 @@ export function AgentBuilder({ agentId }: { agentId: string | null }) {
         </form>
       </div>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen} title={t.common.delete} description={f(t.agents.deleteConfirm, { name: existing?.name ?? "" })}>
+      <AppDialog open={deleteOpen} onOpenChange={setDeleteOpen} title={t.common.delete} description={f(t.agents.deleteConfirm, { name: existing?.name ?? "" })}>
         <div className="flex justify-end gap-2">
-          <Button onClick={() => setDeleteOpen(false)}>{t.common.cancel}</Button>
-          <Button variant="danger" onClick={() => remove.mutate()} disabled={remove.isPending}>
+          <Button variant="outline" onClick={() => setDeleteOpen(false)}>{t.common.cancel}</Button>
+          <Button variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
             {t.common.delete}
           </Button>
         </div>
-      </Dialog>
+      </AppDialog>
     </div>
   );
 }

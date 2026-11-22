@@ -2,20 +2,37 @@
 @import "@fontsource-variable/vazirmatn";
 
 /* Tokens come from DESIGN.md. Light is the default; dark applies by system preference or explicit choice. */
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+/*
+ * shadcn/ui tokens, filled with the DESIGN.md palette.
+ * background = paper, foreground = ink, card/popover = surface, muted/accent = the step above paper,
+ * primary = ink (primary actions), brand = Persian turquoise (send button, active agent, focus ring).
+ */
 :root {
-  --paper: #f6f4ef;
-  --surface: #ffffff;
-  --surface-2: #efece5;
-  --ink: #1e1c19;
-  --muted: #5e5951;
-  --line: #e2ded5;
-  --line-strong: #cfc9bd;
-  --accent: #0e6b63;
-  --accent-ink: #ffffff;
-  --accent-soft: #e1efed;
-  --danger: #a3332b;
-  --danger-soft: #f6e4e1;
-  --focus: #0e6b63;
+  --radius: 0.5rem;
+  --background: #f6f4ef;
+  --foreground: #1e1c19;
+  --card: #ffffff;
+  --card-foreground: #1e1c19;
+  --popover: #ffffff;
+  --popover-foreground: #1e1c19;
+  --primary: #1e1c19;
+  --primary-foreground: #f6f4ef;
+  --secondary: #efece5;
+  --secondary-foreground: #1e1c19;
+  --muted: #efece5;
+  --muted-foreground: #5e5951;
+  --accent: #efece5;
+  --accent-foreground: #1e1c19;
+  --destructive: #a3332b;
+  --destructive-soft: #f6e4e1;
+  --border: #e2ded5;
+  --input: #cfc9bd;
+  --ring: #0e6b63;
+  --brand: #0e6b63;
+  --brand-foreground: #ffffff;
+  --brand-soft: #e1efed;
   --seal-firoozeh: #0e6b63;
   --seal-lapis: #2f4b8a;
   --seal-saffron: #8a5d0c;
@@ -26,46 +43,29 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #151412;
-    --surface: #1d1b18;
-    --surface-2: #26231f;
-    --ink: #ece8e1;
-    --muted: #a8a196;
-    --line: #2e2b27;
-    --line-strong: #403c36;
-    --accent: #4fb3a6;
-    --accent-ink: #0d1514;
-    --accent-soft: #1c302d;
-    --danger: #e07a70;
-    --danger-soft: #3a201d;
-    --focus: #4fb3a6;
-    --seal-firoozeh: #4fb3a6;
-    --seal-lapis: #8ea6e0;
-    --seal-saffron: #d8a650;
-    --seal-pomegranate: #e08a95;
-    --seal-olive: #a9bd72;
-    --seal-slate: #a3adbd;
-    --code-bg: #24211d;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme="dark"] {
-  --paper: #151412;
-  --surface: #1d1b18;
-  --surface-2: #26231f;
-  --ink: #ece8e1;
-  --muted: #a8a196;
-  --line: #2e2b27;
-  --line-strong: #403c36;
-  --accent: #4fb3a6;
-  --accent-ink: #0d1514;
-  --accent-soft: #1c302d;
-  --danger: #e07a70;
-  --danger-soft: #3a201d;
-  --focus: #4fb3a6;
+[data-theme="dark"] {
+  --background: #151412;
+  --foreground: #ece8e1;
+  --card: #1d1b18;
+  --card-foreground: #ece8e1;
+  --popover: #1d1b18;
+  --popover-foreground: #ece8e1;
+  --primary: #ece8e1;
+  --primary-foreground: #151412;
+  --secondary: #26231f;
+  --secondary-foreground: #ece8e1;
+  --muted: #26231f;
+  --muted-foreground: #a8a196;
+  --accent: #26231f;
+  --accent-foreground: #ece8e1;
+  --destructive: #e07a70;
+  --destructive-soft: #3a201d;
+  --border: #2e2b27;
+  --input: #403c36;
+  --ring: #4fb3a6;
+  --brand: #4fb3a6;
+  --brand-foreground: #0d1514;
+  --brand-soft: #1c302d;
   --seal-firoozeh: #4fb3a6;
   --seal-lapis: #8ea6e0;
   --seal-saffron: #d8a650;
@@ -77,30 +77,44 @@
 }
 
 @theme inline {
-  --color-paper: var(--paper);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-ink: var(--ink);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-accent-soft: var(--accent-soft);
-  --color-danger: var(--danger);
-  --color-danger-soft: var(--danger-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --font-sans: "Vazirmatn Variable", "Vazirmatn", system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --radius-control: 6px;
-  --radius-panel: 10px;
-  --radius-seal: 4px;
 }
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
   html,
   body {
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01";
     -webkit-font-smoothing: antialiased;
@@ -129,11 +143,11 @@
     cursor: not-allowed;
   }
   :focus-visible {
-    outline: 2px solid var(--focus);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
   ::selection {
-    background: var(--accent-soft);
+    background: var(--brand-soft);
   }
 }
 
@@ -179,14 +193,14 @@
   list-style: decimal;
 }
 .prose-chat a {
-  color: var(--accent);
+  color: var(--brand);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .prose-chat blockquote {
-  border-inline-start: 2px solid var(--line-strong);
+  border-inline-start: 2px solid var(--input);
   padding-inline-start: 0.9em;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .prose-chat table {
   display: block;
@@ -196,7 +210,7 @@
 }
 .prose-chat th,
 .prose-chat td {
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   padding: 0.35em 0.6em;
   text-align: start;
 }
@@ -215,8 +229,8 @@
   font-size: 0.85rem;
   line-height: 1.6;
   background: var(--code-bg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 0.9em 1em;
   overflow-x: auto;
 }
@@ -224,7 +238,7 @@
 /* highlight.js tokens mapped onto the palette instead of a stock theme. */
 .hljs-comment,
 .hljs-quote {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-style: italic;
 }
 .hljs-keyword,
@@ -266,5 +280,5 @@
   height: 1.1em;
   margin-inline-start: 2px;
   vertical-align: text-bottom;
-  background: var(--muted);
+  background: var(--muted-foreground);
 }

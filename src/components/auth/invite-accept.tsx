@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, ApiRequestError } from "@/lib/client/api";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "../i18n-provider";
 
 export function InviteAccept({ token, signedIn }: { token: string; signedIn: boolean }) {
@@ -29,19 +29,19 @@ export function InviteAccept({ token, signedIn }: { token: string; signedIn: boo
       <h1 className="text-[26px] font-bold">{t.invite.title}</h1>
       {signedIn ? (
         <>
-          <Button variant="primary" className="mt-8 w-full" onClick={accept} disabled={busy}>
+          <Button variant="default" className="mt-8 w-full" onClick={accept} disabled={busy}>
             {t.invite.accept}
           </Button>
           {error && (
-            <p role="alert" className="mt-4 text-[14px] text-danger">
+            <p role="alert" className="mt-4 text-[14px] text-destructive">
               {error}
             </p>
           )}
         </>
       ) : (
         <>
-          <p className="mt-4 text-[15px] leading-7 text-muted">{t.invite.signInFirst}</p>
-          <Link href={`/sign-in?next=/invite/${token}`} className="mt-6 inline-flex h-11 items-center rounded-[var(--radius-control)] bg-ink px-4 text-sm font-medium text-paper">
+          <p className="mt-4 text-[15px] leading-7 text-muted-foreground">{t.invite.signInFirst}</p>
+          <Link href={`/sign-in?next=/invite/${token}`} className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">
             {t.auth.signIn}
           </Link>
         </>

@@ -3,10 +3,13 @@
 import { useMemo, useState } from "react";
 import type { AgentDTO } from "@/lib/contracts";
 import { cn } from "@/lib/utils";
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Label } from "@/components/ui/label";
 import { useI18n } from "../i18n-provider";
-import { Dialog } from "../ui/dialog";
-import { Input, Select } from "../ui/field";
-import { Seal } from "../ui/seal";
+import { AppDialog } from "../app/app-dialog";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Seal } from "../app/seal";
 
 export function AgentSelectorModal({
   open,
@@ -36,61 +39,61 @@ export function AgentSelectorModal({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t.agentSelector.title}>
+    <AppDialog open={open} onOpenChange={onOpenChange} title={t.agentSelector.title}>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <label className="sr-only" htmlFor="agent-search">
+        <Label className="sr-only" htmlFor="agent-search">
           {t.agentSelector.search}
-        </label>
+        </Label>
         <Input id="agent-search" type="search" placeholder={t.agentSelector.search} value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
         {roles.length > 0 && (
           <>
-            <label className="sr-only" htmlFor="agent-role">
+            <Label className="sr-only" htmlFor="agent-role">
               {t.agents.role}
-            </label>
-            <Select id="agent-role" value={role} onChange={(e) => setRole(e.target.value)} className="sm:w-44">
-              <option value="">{t.agentSelector.allRoles}</option>
+            </Label>
+            <NativeSelect id="agent-role" value={role} onChange={(e) => setRole(e.target.value)} className="sm:w-44">
+              <NativeSelectOption value="">{t.agentSelector.allRoles}</NativeSelectOption>
               {roles.map((r) => (
-                <option key={r} value={r}>
+                <NativeSelectOption key={r} value={r}>
                   {r}
-                </option>
+                </NativeSelectOption>
               ))}
-            </Select>
+            </NativeSelect>
           </>
         )}
       </div>
       <ul className="mt-4 max-h-[50dvh] space-y-1 overflow-y-auto" role="listbox" aria-label={t.agentSelector.title}>
-        {shown.length === 0 && <li className="py-6 text-[15px] text-muted">{t.agentSelector.empty}</li>}
+        {shown.length === 0 && <li className="py-6 text-[15px] text-muted-foreground">{t.agentSelector.empty}</li>}
         {shown.map((a) => {
           const current = a.id === currentId;
           return (
             <li key={a.id}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={current}
-                aria-label={`${a.name} · ${t.agents.modes[a.mode]}`}
-                disabled={busy}
-                onClick={() => onSelect(a.id)}
-                className={cn("flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-3 text-start hover:bg-surface-2 active:bg-line", current && "bg-accent-soft")}
+              <Item
+                asChild
+                size="sm"
+                className={cn("w-full cursor-pointer text-start hover:bg-muted active:bg-border", current && "bg-brand-soft hover:bg-brand-soft")}
               >
-                <Seal name={a.name} color={a.avatar} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="truncate font-semibold">{a.name}</span>
-                    <span className="text-[12px] text-muted">{t.agents.modes[a.mode]}</span>
-                    {current && <span className="text-[12px] font-medium text-accent">{t.agentSelector.current}</span>}
-                  </span>
-                  {(a.role || a.description) && (
-                    <span className="mt-0.5 block text-[13px] leading-6 text-muted" dir="auto">
-                      {[a.role, a.description].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-                </span>
-              </button>
+                <button type="button" role="option" aria-selected={current} aria-label={`${a.name} · ${t.agents.modes[a.mode]}`} disabled={busy} onClick={() => onSelect(a.id)}>
+                  <ItemMedia>
+                    <Seal name={a.name} color={a.avatar} />
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle className="flex items-center gap-2">
+                      <span className="truncate">{a.name}</span>
+                      <span className="text-[12px] font-normal text-muted-foreground">{t.agents.modes[a.mode]}</span>
+                      {current && <span className="text-[12px] text-brand">{t.agentSelector.current}</span>}
+                    </ItemTitle>
+                    {(a.role || a.description) && (
+                      <ItemDescription className="text-[13px] leading-6" dir="auto">
+                        {[a.role, a.description].filter(Boolean).join(" · ")}
+                      </ItemDescription>
+                    )}
+                  </ItemContent>
+                </button>
+              </Item>
             </li>
           );
         })}
       </ul>
-    </Dialog>
+    </AppDialog>
   );
 }

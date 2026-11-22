@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "@/components/ui/item";
 import { api } from "@/lib/client/api";
 import type { AgentDTO, ProviderDTO } from "@/lib/contracts";
 import { can } from "@/lib/workspaces/permissions";
 import { useI18n } from "../i18n-provider";
 import { useSession } from "../shell/session-context";
-import { buttonClass } from "../ui/button";
-import { Seal } from "../ui/seal";
-import { EmptyState, ErrorState, SkeletonRows } from "../ui/states";
+import { buttonVariants } from "@/components/ui/button";
+import { Seal } from "../app/seal";
+import { EmptyState, ErrorState, SkeletonRows } from "../app/states";
 
 export function AgentList() {
   const { t, relative } = useI18n();
@@ -28,10 +30,10 @@ export function AgentList() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-bold">{t.agents.title}</h1>
-          <p className="mt-1 max-w-xl text-[15px] leading-7 text-muted">{t.agents.intro}</p>
+          <p className="mt-1 max-w-xl text-[15px] leading-7 text-muted-foreground">{t.agents.intro}</p>
         </div>
         {canCreate && (
-          <Link href="/agents/new" className={buttonClass({ variant: "primary" })}>
+          <Link href="/agents/new" className={buttonVariants()}>
             {t.agents.new}
           </Link>
         )}
@@ -46,7 +48,7 @@ export function AgentList() {
             body={t.agents.emptyBody}
             action={
               canCreate ? (
-                <Link href="/agents/new" className={buttonClass({ variant: "primary" })}>
+                <Link href="/agents/new" className={buttonVariants()}>
                   {t.agents.createAction}
                 </Link>
               ) : undefined
@@ -54,36 +56,39 @@ export function AgentList() {
           />
         )}
         {q.isSuccess && q.data.length > 0 && (
-          <ul className="divide-y divide-line border-y border-line">
-            {q.data.map((a) => (
-              <li key={a.id}>
-                <Link href={`/agents/${a.id}`} className="flex items-start gap-4 px-2 py-4 hover:bg-surface-2">
-                  <Seal name={a.name} color={a.avatar} size="lg" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <span className="text-[16px] font-semibold" dir="auto">
-                        {a.name}
-                      </span>
-                      <span className="text-[13px] text-muted">{t.agents.modes[a.mode]}</span>
-                      {!a.isActive && <span className="text-[13px] font-medium text-danger">{t.agents.inactive}</span>}
-                    </span>
-                    {(a.role || a.description) && (
-                      <span className="mt-1 block text-[14px] leading-6 text-muted" dir="auto">
-                        {[a.role, a.description].filter(Boolean).join(" · ")}
-                      </span>
-                    )}
-                  </span>
-                  <span className="hidden shrink-0 text-end text-[13px] text-muted sm:block">
-                    <span className="block" dir="ltr">
-                      {a.model || (a.providerConnectionId ? t.agents.modelDefault : "")}
-                    </span>
-                    <span className="block">{connName(a.providerConnectionId ?? null)}</span>
-                    <span className="block">{relative(a.updatedAt)}</span>
-                  </span>
-                </Link>
-              </li>
+          <ItemGroup className="rounded-lg border bg-card">
+            {q.data.map((a, idx) => (
+              <Fragment key={a.id}>
+                {idx > 0 && <ItemSeparator />}
+                <Item asChild className="hover:bg-muted">
+                  <Link href={`/agents/${a.id}`}>
+                    <ItemMedia>
+                      <Seal name={a.name} color={a.avatar} size="lg" />
+                    </ItemMedia>
+                    <ItemContent>
+                      <ItemTitle className="flex flex-wrap items-baseline gap-x-3">
+                        <span className="text-[16px]" dir="auto">
+                          {a.name}
+                        </span>
+                        <span className="text-[13px] font-normal text-muted-foreground">{t.agents.modes[a.mode]}</span>
+                        {!a.isActive && <span className="text-[13px] text-destructive">{t.agents.inactive}</span>}
+                      </ItemTitle>
+                      {(a.role || a.description) && (
+                        <ItemDescription className="text-[14px] leading-6" dir="auto">
+                          {[a.role, a.description].filter(Boolean).join(" · ")}
+                        </ItemDescription>
+                      )}
+                    </ItemContent>
+                    <ItemActions className="hidden flex-col items-end gap-0 text-end text-[13px] text-muted-foreground sm:flex">
+                      <span dir="ltr">{a.model || (a.providerConnectionId ? t.agents.modelDefault : "")}</span>
+                      <span>{connName(a.providerConnectionId ?? null)}</span>
+                      <span>{relative(a.updatedAt)}</span>
+                    </ItemActions>
+                  </Link>
+                </Item>
+              </Fragment>
             ))}
-          </ul>
+          </ItemGroup>
         )}
       </div>
     </div>

@@ -1,17 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { FieldSet } from "@/components/ui/field";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemSeparator, ItemTitle } from "@/components/ui/item";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Fragment, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiRequestError } from "@/lib/client/api";
 import { can, type Role } from "@/lib/workspaces/permissions";
-import { cn } from "@/lib/utils";
 import { useI18n } from "../i18n-provider";
 import { useSession } from "../shell/session-context";
-import { Button } from "../ui/button";
-import { Field, Input, Select } from "../ui/field";
-import { EmptyState, ErrorState, SkeletonRows } from "../ui/states";
-import { useToast } from "../ui/toast";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/app/form-field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { EmptyState, ErrorState, SkeletonRows } from "../app/states";
+import { toast } from "sonner";
 
 type Tab = "general" | "members" | "usage" | "security";
 type Workspace = { id: string; name: string; slug: string; isPersonal: boolean; monthlyBudgetUsd: number | null; role: Role };
@@ -36,38 +43,27 @@ export function WorkspaceSettings() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8">
       <h1 className="text-[26px] font-bold">{t.settings.title}</h1>
-      <div role="tablist" aria-label={t.settings.title} className="mt-6 flex gap-1 overflow-x-auto border-b border-line">
-        {tabs.map((x) => (
-          <button
-            key={x}
-            role="tab"
-            id={`tab-${x}`}
-            aria-selected={tab === x}
-            aria-controls={`panel-${x}`}
-            onClick={() => setTab(x)}
-            onKeyDown={(e) => {
-              const i = tabs.indexOf(x);
-              const fwd = document.dir === "rtl" ? "ArrowLeft" : "ArrowRight";
-              const back = document.dir === "rtl" ? "ArrowRight" : "ArrowLeft";
-              if (e.key === fwd) setTab(tabs[(i + 1) % tabs.length]);
-              if (e.key === back) setTab(tabs[(i - 1 + tabs.length) % tabs.length]);
-            }}
-            tabIndex={tab === x ? 0 : -1}
-            className={cn(
-              "-mb-px min-h-11 whitespace-nowrap border-b-2 px-3 text-[14px]",
-              tab === x ? "border-ink font-semibold" : "border-transparent text-muted hover:text-ink",
-            )}
-          >
-            {t.settings.tabs[x]}
-          </button>
-        ))}
-      </div>
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="pt-6">
-        {tab === "general" && <GeneralTab />}
-        {tab === "members" && <MembersTab />}
-        {tab === "usage" && <UsageTab />}
-        {tab === "security" && <SecurityTab />}
-      </div>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="mt-6 gap-6">
+        <TabsList variant="line" aria-label={t.settings.title} className="w-full justify-start overflow-x-auto border-b">
+          {tabs.map((x) => (
+            <TabsTrigger key={x} value={x} className="min-h-11 flex-none px-3 text-[14px]">
+              {t.settings.tabs[x]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value="general">
+          <GeneralTab />
+        </TabsContent>
+        <TabsContent value="members">
+          <MembersTab />
+        </TabsContent>
+        <TabsContent value="usage">
+          <UsageTab />
+        </TabsContent>
+        <TabsContent value="security">
+          <SecurityTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -86,7 +82,6 @@ function GeneralForm({ ws }: { ws: Workspace }) {
   const session = useSession();
   const router = useRouter();
   const qc = useQueryClient();
-  const toast = useToast();
   const [name, setName] = useState(ws.name);
   const [budget, setBudget] = useState(ws.monthlyBudgetUsd === null ? "" : String(ws.monthlyBudgetUsd));
   const [confirm, setConfirm] = useState("");
@@ -99,7 +94,7 @@ function GeneralForm({ ws }: { ws: Workspace }) {
       void qc.invalidateQueries({ queryKey: ["workspace"] });
       router.refresh();
     },
-    onError: (e) => toast(e instanceof ApiRequestError ? e.message : t.common.errorGeneric, "error"),
+    onError: (e) => toast.error(e instanceof ApiRequestError ? e.message : t.common.errorGeneric),
   });
   const del = useMutation({
     mutationFn: () => api(`/api/workspaces/${session.workspaceId}`, { method: "DELETE", body: { confirmName: confirm } }),
@@ -108,7 +103,7 @@ function GeneralForm({ ws }: { ws: Workspace }) {
       router.replace("/chat");
       router.refresh();
     },
-    onError: (e) => toast(e instanceof ApiRequestError ? e.message : t.common.errorGeneric, "error"),
+    onError: (e) => toast.error(e instanceof ApiRequestError ? e.message : t.common.errorGeneric),
   });
 
   return (
@@ -120,26 +115,26 @@ function GeneralForm({ ws }: { ws: Workspace }) {
           save.mutate();
         }}
       >
-        <fieldset disabled={!editable} className="space-y-5">
-          <Field label={t.settings.name}>{(a) => <Input {...a} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} dir="auto" />}</Field>
-          <Field label={t.settings.budget} hint={t.settings.budgetHelp} optional={t.common.optional}>
+        <FieldSet disabled={!editable} className="gap-5">
+          <FormField label={t.settings.name}>{(a) => <Input {...a} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} dir="auto" />}</FormField>
+          <FormField label={t.settings.budget} hint={t.settings.budgetHelp} optional={t.common.optional}>
             {(a) => <Input {...a} type="number" min={0} step="1" dir="ltr" value={budget} onChange={(e) => setBudget(e.target.value)} />}
-          </Field>
-        </fieldset>
+          </FormField>
+        </FieldSet>
         {editable && (
-          <Button type="submit" variant="primary" disabled={save.isPending || !name.trim()}>
+          <Button type="submit" variant="default" disabled={save.isPending || !name.trim()}>
             {save.isPending ? t.common.saving : t.common.save}
           </Button>
         )}
       </form>
 
       {can(session.role, "workspace.delete") && (
-        <section aria-labelledby="del-ws" className="border-t border-line pt-6">
-          <h2 id="del-ws" className="text-[17px] font-semibold text-danger">
+        <section aria-labelledby="del-ws" className="border-t border-border pt-6">
+          <h2 id="del-ws" className="text-[17px] font-semibold text-destructive">
             {t.settings.deleteTitle}
           </h2>
           {ws.isPersonal ? (
-            <p className="mt-2 text-[14px] text-muted">{t.settings.personalNote}</p>
+            <p className="mt-2 text-[14px] text-muted-foreground">{t.settings.personalNote}</p>
           ) : (
             <form
               className="mt-3 space-y-3"
@@ -148,9 +143,9 @@ function GeneralForm({ ws }: { ws: Workspace }) {
                 del.mutate();
               }}
             >
-              <p className="text-[14px] leading-6 text-muted">{t.settings.deleteBody}</p>
-              <Field label={t.settings.name}>{(a) => <Input {...a} value={confirm} onChange={(e) => setConfirm(e.target.value)} dir="auto" placeholder={ws.name} />}</Field>
-              <Button type="submit" variant="danger" disabled={confirm !== ws.name || del.isPending}>
+              <p className="text-[14px] leading-6 text-muted-foreground">{t.settings.deleteBody}</p>
+              <FormField label={t.settings.name}>{(a) => <Input {...a} value={confirm} onChange={(e) => setConfirm(e.target.value)} dir="auto" placeholder={ws.name} />}</FormField>
+              <Button type="submit" variant="destructive" disabled={confirm !== ws.name || del.isPending}>
                 {t.settings.deleteAction}
               </Button>
             </form>
@@ -166,14 +161,13 @@ function MembersTab() {
   const session = useSession();
   const router = useRouter();
   const qc = useQueryClient();
-  const toast = useToast();
   const ws = session.workspaceId;
   const manage = can(session.role, "members.manage");
   const members = useQuery({ queryKey: ["members", ws], queryFn: () => api<{ items: Member[] }>(`/api/workspaces/${ws}/members`).then((r) => r.items) });
   const invites = useQuery({ queryKey: ["invites", ws], queryFn: () => api<{ items: Invitation[] }>(`/api/workspaces/${ws}/invitations`).then((r) => r.items), enabled: manage });
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("member");
-  const onErr = (e: unknown) => toast(e instanceof ApiRequestError ? e.message : t.common.errorGeneric, "error");
+  const onErr = (e: unknown) => toast.error(e instanceof ApiRequestError ? e.message : t.common.errorGeneric);
 
   const invite = useMutation({
     mutationFn: () => api(`/api/workspaces/${ws}/invitations`, { body: { email, role } }),
@@ -216,21 +210,21 @@ function MembersTab() {
             if (email) invite.mutate();
           }}
         >
-          <Field label={t.settings.inviteEmail} className="flex-1">
+          <FormField label={t.settings.inviteEmail} className="flex-1">
             {(a) => <Input {...a} type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />}
-          </Field>
-          <Field label={t.settings.inviteRole} className="sm:w-36">
+          </FormField>
+          <FormField label={t.settings.inviteRole} className="sm:w-36">
             {(a) => (
-              <Select {...a} value={role} onChange={(e) => setRole(e.target.value as Role)}>
+              <NativeSelect {...a} value={role} onChange={(e) => setRole(e.target.value as Role)}>
                 {(["admin", "member", "viewer"] as Role[]).map((r) => (
-                  <option key={r} value={r}>
+                  <NativeSelectOption key={r} value={r}>
                     {t.settings.roles[r]}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </Select>
+              </NativeSelect>
             )}
-          </Field>
-          <Button type="submit" variant="primary" disabled={!email || invite.isPending}>
+          </FormField>
+          <Button type="submit" variant="default" disabled={!email || invite.isPending}>
             {t.settings.invite}
           </Button>
         </form>
@@ -242,44 +236,47 @@ function MembersTab() {
         </h2>
         {members.isPending && <SkeletonRows rows={2} label={t.common.loading} />}
         {members.isError && <ErrorState message={t.common.errorGeneric} onRetry={() => members.refetch()} retryLabel={t.common.retry} />}
-        <ul className="mt-3 divide-y divide-line border-y border-line">
-          {members.data?.map((m) => (
-            <li key={m.id} className="flex flex-col gap-2 px-2 py-3 sm:flex-row sm:items-center">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium" dir="auto">
-                  {m.name}
-                </p>
-                <p className="text-[13px] text-muted" dir="ltr">
-                  {m.email}
-                </p>
-              </div>
-              {manage && m.role !== "owner" && m.userId !== session.me.id ? (
-                <>
-                  <label htmlFor={`role-${m.id}`} className="sr-only">
-                    {t.settings.inviteRole}
-                  </label>
-                  <Select id={`role-${m.id}`} className="sm:w-32" value={m.role} onChange={(e) => changeRole.mutate({ id: m.id, role: e.target.value as Role })}>
-                    {(["admin", "member", "viewer"] as Role[]).map((r) => (
-                      <option key={r} value={r}>
-                        {t.settings.roles[r]}
-                      </option>
-                    ))}
-                  </Select>
-                  <Button size="sm" variant="danger" onClick={() => removeMember.mutate(m)}>
-                    {t.settings.remove}
-                  </Button>
-                </>
-              ) : (
-                <span className="text-[14px] text-muted">{t.settings.roles[m.role]}</span>
-              )}
-              {m.userId === session.me.id && m.role !== "owner" && (
-                <Button size="sm" onClick={() => removeMember.mutate(m)}>
-                  {t.settings.leave}
-                </Button>
-              )}
-            </li>
+        <ItemGroup className="mt-3 rounded-lg border">
+          {members.data?.map((m, idx) => (
+            <Fragment key={m.id}>
+              {idx > 0 && <ItemSeparator />}
+              <Item className="flex-col items-stretch sm:flex-row sm:items-center">
+                <ItemContent>
+                  <ItemTitle dir="auto">{m.name}</ItemTitle>
+                  <ItemDescription className="text-[13px]" dir="ltr">
+                    {m.email}
+                  </ItemDescription>
+                </ItemContent>
+                <ItemActions className="flex-wrap">
+                  {manage && m.role !== "owner" && m.userId !== session.me.id ? (
+                    <>
+                      <Label htmlFor={`role-${m.id}`} className="sr-only">
+                        {t.settings.inviteRole}
+                      </Label>
+                      <NativeSelect id={`role-${m.id}`} className="sm:w-32" value={m.role} onChange={(e) => changeRole.mutate({ id: m.id, role: e.target.value as Role })}>
+                        {(["admin", "member", "viewer"] as Role[]).map((r) => (
+                          <NativeSelectOption key={r} value={r}>
+                            {t.settings.roles[r]}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                      <Button size="sm" variant="destructive" onClick={() => removeMember.mutate(m)}>
+                        {t.settings.remove}
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-[14px] text-muted-foreground">{t.settings.roles[m.role]}</span>
+                  )}
+                  {m.userId === session.me.id && m.role !== "owner" && (
+                    <Button variant="outline" size="sm" onClick={() => removeMember.mutate(m)}>
+                      {t.settings.leave}
+                    </Button>
+                  )}
+                </ItemActions>
+              </Item>
+            </Fragment>
           ))}
-        </ul>
+        </ItemGroup>
       </section>
 
       {manage && (invites.data?.length ?? 0) > 0 && (
@@ -287,21 +284,26 @@ function MembersTab() {
           <h2 id="inv-h" className="text-[17px] font-semibold">
             {t.settings.pending}
           </h2>
-          <ul className="mt-3 divide-y divide-line border-y border-line">
-            {invites.data!.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-center gap-3 px-2 py-3">
-                <span className="flex-1" dir="ltr">
-                  {i.email}
-                </span>
-                <span className="text-[13px] text-muted">
-                  {t.settings.roles[i.role]} · {date(i.expiresAt, { dateStyle: "medium" })}
-                </span>
-                <Button size="sm" onClick={() => revoke.mutate(i.id)}>
-                  {t.settings.revoke}
-                </Button>
-              </li>
+          <ItemGroup className="mt-3 rounded-lg border">
+            {invites.data!.map((i, idx) => (
+              <Fragment key={i.id}>
+                {idx > 0 && <ItemSeparator />}
+                <Item size="sm">
+                  <ItemContent>
+                    <ItemTitle dir="ltr">{i.email}</ItemTitle>
+                    <ItemDescription className="text-[13px]">
+                      {t.settings.roles[i.role]} · {date(i.expiresAt, { dateStyle: "medium" })}
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions>
+                    <Button variant="outline" size="sm" onClick={() => revoke.mutate(i.id)}>
+                      {t.settings.revoke}
+                    </Button>
+                  </ItemActions>
+                </Item>
+              </Fragment>
             ))}
-          </ul>
+          </ItemGroup>
         </section>
       )}
     </div>
@@ -320,14 +322,17 @@ function UsageTab() {
 
   return (
     <div className="space-y-8">
-      <p className="max-w-2xl text-[14px] leading-6 text-muted">{t.settings.usageEstimate}</p>
+      <p className="max-w-2xl text-[14px] leading-6 text-muted-foreground">{t.settings.usageEstimate}</p>
       <section aria-labelledby="month-h">
         <h2 id="month-h" className="text-[15px] font-semibold">
           {f(t.settings.month, { spent: usd(u.month.estimatedCost), budget: num(u.month.budgetUsd) })}
         </h2>
-        <div className="mt-2 h-2 max-w-md overflow-hidden rounded-full bg-surface-2" role="meter" aria-valuemin={0} aria-valuemax={u.month.budgetUsd} aria-valuenow={u.month.estimatedCost} aria-label={t.settings.budget}>
-          <div className={cn("h-full", monthShare >= 0.9 ? "bg-danger" : "bg-ink")} style={{ width: `${monthShare * 100}%` }} />
-        </div>
+        <Progress
+          value={monthShare * 100}
+          aria-label={t.settings.budget}
+          className="mt-2 max-w-md bg-muted"
+          indicatorClassName={monthShare >= 0.9 ? "bg-destructive" : "bg-primary"}
+        />
       </section>
 
       {u.totals.requests === 0 ? (
@@ -346,7 +351,7 @@ function UsageTab() {
                 [t.settings.cost, usd(u.totals.estimatedCost)],
               ].map(([k, v]) => (
                 <div key={k}>
-                  <dt className="text-[13px] text-muted">{k}</dt>
+                  <dt className="text-[13px] text-muted-foreground">{k}</dt>
                   <dd className="text-[20px] font-semibold">{v}</dd>
                 </div>
               ))}
@@ -360,12 +365,10 @@ function UsageTab() {
             <ul className="mt-3 space-y-1.5">
               {u.byDay.map((d) => (
                 <li key={d.day} className="grid grid-cols-[6.5rem_1fr_5.5rem] items-center gap-3 text-[13px]">
-                  <span className="text-muted" dir="ltr">
+                  <span className="text-muted-foreground" dir="ltr">
                     {d.day}
                   </span>
-                  <span className="h-3 rounded-sm bg-surface-2">
-                    <span className="block h-full rounded-sm bg-ink/70" style={{ width: `${maxDay ? (d.estimatedCost / maxDay) * 100 : 0}%` }} />
-                  </span>
+                  <Progress value={maxDay ? (d.estimatedCost / maxDay) * 100 : 0} aria-label={d.day} className="h-3 rounded-sm bg-muted" indicatorClassName="rounded-sm bg-primary/70" />
                   <span className="text-end">{usd(d.estimatedCost)}</span>
                 </li>
               ))}
@@ -395,26 +398,26 @@ function UsageTable({ title, rows, usd }: { title: string; rows: Array<{ key: st
   return (
     <section>
       <h2 className="text-[15px] font-semibold">{title}</h2>
-      <table className="mt-3 w-full text-[14px]">
-        <thead>
-          <tr className="border-b border-line text-[13px] text-muted">
-            <th className="py-2 text-start font-medium">{title}</th>
-            <th className="py-2 text-end font-medium">{t.settings.requests}</th>
-            <th className="py-2 text-end font-medium">{t.settings.cost}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="mt-3 text-[14px]">
+        <TableHeader>
+          <TableRow className="text-[13px]">
+            <TableHead className="text-start">{title}</TableHead>
+            <TableHead className="text-end">{t.settings.requests}</TableHead>
+            <TableHead className="text-end">{t.settings.cost}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((r) => (
-            <tr key={r.key} className="border-b border-line">
-              <td className="py-2" dir={r.ltr ? "ltr" : "auto"}>
+            <TableRow key={r.key}>
+              <TableCell className="text-start" dir={r.ltr ? "ltr" : "auto"}>
                 {r.label}
-              </td>
-              <td className="py-2 text-end">{num(r.requests)}</td>
-              <td className="py-2 text-end">{usd(r.cost)}</td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-end">{num(r.requests)}</TableCell>
+              <TableCell className="text-end">{usd(r.cost)}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </section>
   );
 }
@@ -428,19 +431,24 @@ function SecurityTab() {
     <section>
       <h2 className="text-[17px] font-semibold">{t.settings.auditTitle}</h2>
       {q.data.length === 0 ? (
-        <p className="mt-3 text-[14px] text-muted">{t.settings.auditEmpty}</p>
+        <p className="mt-3 text-[14px] text-muted-foreground">{t.settings.auditEmpty}</p>
       ) : (
-        <ul className="mt-3 divide-y divide-line border-y border-line text-[14px]">
-          {q.data.map((r) => (
-            <li key={r.id} className="flex flex-wrap gap-x-4 gap-y-1 px-2 py-2.5">
-              <code className="font-mono text-[13px]" dir="ltr">
-                {r.action}
-              </code>
-              <span className="text-muted">{r.actorName ?? ""}</span>
-              <span className="ms-auto text-[13px] text-muted">{date(r.createdAt)}</span>
-            </li>
+        <ItemGroup className="mt-3 rounded-lg border">
+          {q.data.map((r, idx) => (
+            <Fragment key={r.id}>
+              {idx > 0 && <ItemSeparator />}
+              <Item size="sm" className="flex-wrap">
+                <ItemContent className="flex-row flex-wrap items-center gap-x-4">
+                  <ItemTitle className="font-mono text-[13px]" dir="ltr">
+                    {r.action}
+                  </ItemTitle>
+                  <ItemDescription>{r.actorName ?? ""}</ItemDescription>
+                </ItemContent>
+                <ItemActions className="text-[13px] text-muted-foreground">{date(r.createdAt)}</ItemActions>
+              </Item>
+            </Fragment>
           ))}
-        </ul>
+        </ItemGroup>
       )}
     </section>
   );

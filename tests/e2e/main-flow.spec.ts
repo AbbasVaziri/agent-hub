@@ -31,7 +31,8 @@ test.describe.serial("main flow", () => {
     const createAgent = async (name: string, mode: "subagent" | "all" | "primary", extra?: () => Promise<void>) => {
       await page.goto("/agents/new");
       await page.getByLabel("نام", { exact: true }).fill(name);
-      await page.locator(`input[name="mode"][value="${mode}"]`).check();
+      const modeLabel = { primary: "اصلی", subagent: "زیرعامل", all: "هر دو" }[mode];
+      await page.getByRole("radio", { name: new RegExp(`^${modeLabel}`) }).click();
       await page.getByLabel("اتصال").selectOption({ label: "Mock" });
       if (extra) await extra();
       await page.getByRole("button", { name: "ساخت عامل" }).click();

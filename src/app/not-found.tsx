@@ -6,8 +6,8 @@ export default async function NotFound() {
   return (
     <main className="mx-auto max-w-md px-4 py-20">
       <h1 className="text-[22px] font-bold">{t.errors.notFoundTitle}</h1>
-      <p className="mt-2 text-[15px] leading-7 text-muted">{t.errors.notFoundBody}</p>
-      <Link href="/chat" className="mt-6 inline-flex h-11 items-center rounded-[var(--radius-control)] bg-ink px-4 text-sm font-medium text-paper">
+      <p className="mt-2 text-[15px] leading-7 text-muted-foreground">{t.errors.notFoundBody}</p>
+      <Link href="/chat" className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">
         {t.errors.goHome}
       </Link>
     </main>

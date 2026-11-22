@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "../i18n-provider";
 
 function CodeBlock({ children, lang }: { children: React.ReactNode; lang: string | null }) {
@@ -12,11 +13,12 @@ function CodeBlock({ children, lang }: { children: React.ReactNode; lang: string
   const text = extractText(children);
   return (
     <div className="relative">
-      <div dir="ltr" className="flex items-center justify-between px-1 pb-1 text-[12px] text-muted">
+      <div dir="ltr" className="flex items-center justify-between px-1 pb-1 text-[12px] text-muted-foreground">
         <span>{lang ?? "text"}</span>
-        <button
-          type="button"
-          className="min-h-11 rounded px-2 hover:text-ink sm:min-h-7"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-11 px-2 text-[12px] text-muted-foreground sm:h-7"
           onClick={() => {
             void navigator.clipboard.writeText(text).then(() => {
               setCopied(true);
@@ -25,7 +27,7 @@ function CodeBlock({ children, lang }: { children: React.ReactNode; lang: string
           }}
         >
           {copied ? t.common.copied : t.common.copy}
-        </button>
+        </Button>
       </div>
       <pre>{children}</pre>
     </div>
@@ -54,7 +56,7 @@ const components: Components = {
   },
   p: ({ children }) => <p dir="auto">{children}</p>,
   li: ({ children }) => <li dir="auto">{children}</li>,
-  img: ({ alt }) => <span className="text-muted">[{alt || "image"}]</span>,
+  img: ({ alt }) => <span className="text-muted-foreground">[{alt || "image"}]</span>,
 };
 
 export const Markdown = memo(function Markdown({ text }: { text: string }) {

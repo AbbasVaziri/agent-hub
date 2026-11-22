@@ -37,15 +37,25 @@ Seal inks: firoozeh, lapis `#2F4B8A`, saffron `#9A6A12`, pomegranate `#8E2F3A`, 
 - Scale: 13 / 14 / 16 / 20 / 26. Body in chat is 16 with 1.85 line height for Persian.
 - No uppercase tracking labels. Section labels are 13px medium in `muted`.
 
+## Components
+
+All interface components are shadcn/ui (new-york style) in `src/components/ui`, themed through the shadcn CSS variables in `globals.css`, which hold this palette (`background` = paper, `foreground` = ink, `card` = surface, `brand` = firoozeh). Changes made to the generated components, on purpose:
+
+- Logical properties (`ps/pe`, `start/end`, `text-start`) so menus, selects, tables and dialogs mirror in RTL.
+- 44px touch height on phones for buttons and inputs, desktop sizes from `sm` up.
+- A `brand` button variant for the send action; `shadow-xs` removed from form controls.
+- Translatable close labels on Dialog and Sheet; Progress fills by width so it starts at the reading edge.
+- App compositions live in `src/components/app` (FormField, CheckboxField, AppDialog, Seal on Avatar, state views on Empty/Alert/Skeleton/Spinner).
+
 ## Shape and elevation
 
-- Radius: 6px controls, 10px panels and dialogs, 4px seals. No pills except the conversation status chip.
+- Radius: 6px controls (`rounded-md`), 8px panels and dialogs (`rounded-lg`), 4px seals. No pills.
 - Shadow only on popovers, menus and dialogs (they float above the page). Everything else is flat with hairlines.
 - No glass, no glow, no gradients, no background patterns.
 
 ## Icons
 
-The specification asks for Lucide React. Kept, as an owner override of antislop R-04 (recorded): icons appear only where a text label would not fit (icon buttons in the composer and message actions), always with an accessible name. Navigation is text first.
+The specification asks for Lucide React (also shadcn's icon set). Kept, as an owner override of antislop R-04 (recorded): icons appear only where a text label would not fit (icon buttons in the composer and message actions), always with an accessible name. Navigation is text first.
 
 ## States
 

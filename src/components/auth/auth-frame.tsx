@@ -1,5 +1,6 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
 import { useI18n } from "../i18n-provider";
 import { LanguageSelect, ThemeSelect } from "../theme-select";
 
@@ -11,15 +12,15 @@ export function AuthFrame({ children }: { children: React.ReactNode }) {
       <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-8">
         <span className="text-[17px] font-bold tracking-tight">{t.brand}</span>
         <div className="flex gap-2">
-          <label className="sr-only" htmlFor="auth-lang">
+          <Label className="sr-only" htmlFor="auth-lang">
             {t.language.label}
-          </label>
+          </Label>
           <div className="w-28">
             <LanguageSelect id="auth-lang" />
           </div>
-          <label className="sr-only" htmlFor="auth-theme">
+          <Label className="sr-only" htmlFor="auth-theme">
             {t.theme.label}
-          </label>
+          </Label>
           <div className="w-32">
             <ThemeSelect id="auth-theme" />
           </div>

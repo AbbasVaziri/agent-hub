@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, Check, Copy, MoreHorizontal, RotateCcw, Square } from "lucide-react";
+import { ArrowUp, Check, Copy, MoreHorizontal, RotateCcw, ShieldQuestion, Square } from "lucide-react";
 import { api, ApiRequestError } from "@/lib/client/api";
 import type { AgentDTO, ConversationDTO, MessageDTO, ProviderDTO, TimelineItem } from "@/lib/contracts";
 import { can } from "@/lib/workspaces/permissions";
@@ -12,13 +12,21 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "../i18n-provider";
 import { useSession } from "../shell/session-context";
 import { conversationsKey } from "../shell/conversation-list";
-import { Button, buttonClass } from "../ui/button";
-import { Dialog } from "../ui/dialog";
-import { Field, Input, Select } from "../ui/field";
-import { Menu, MenuItem, MenuSeparator } from "../ui/menu";
-import { Seal } from "../ui/seal";
-import { EmptyState, ErrorState, Loading } from "../ui/states";
-import { useToast } from "../ui/toast";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { AppDialog } from "../app/app-dialog";
+import { FormField } from "@/components/app/form-field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Seal } from "../app/seal";
+import { EmptyState, ErrorState, Loading } from "../app/states";
+import { toast } from "sonner";
 import { AgentSelectorModal } from "./agent-selector-modal";
 import { Markdown } from "./markdown";
 import { useChatStream, type LiveItem } from "./use-chat-stream";
@@ -43,7 +51,6 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
   const session = useSession();
   const router = useRouter();
   const qc = useQueryClient();
-  const toast = useToast();
   const [conversationId, setConversationId] = useState(initialId);
   const pendingFirst = useRef<string | null>(null);
   const [draftAgentId, setDraftAgentId] = useState<string | null>(null);
@@ -171,7 +178,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
       setConversationId(created.id);
       void qc.invalidateQueries({ queryKey: conversationsKey });
     } catch {
-      toast(t.common.errorGeneric, "error");
+      toast.error(t.common.errorGeneric);
     }
   };
 
@@ -188,7 +195,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
       void qc.invalidateQueries({ queryKey: ["timeline", c.id] });
       setSelectorOpen(false);
     },
-    onError: (e) => toast(e instanceof ApiRequestError ? e.message : t.common.errorGeneric, "error"),
+    onError: (e) => toast.error(e instanceof ApiRequestError ? e.message : t.common.errorGeneric),
   });
 
   // Empty and error states for the whole view.
@@ -201,7 +208,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
           title={nf ? t.chat.notFound : t.chat.loadError}
           body=""
           action={
-            <Link href="/chat" className={buttonClass({ variant: "secondary" })}>
+            <Link href="/chat" className={buttonVariants({ variant: "outline" })}>
               {t.chat.newChat}
             </Link>
           }
@@ -225,7 +232,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
             title={t.chat.noProviderTitle}
             body={t.chat.noProviderBody}
             action={
-              <Link href="/providers" className={buttonClass({ variant: "primary" })}>
+              <Link href="/providers" className={buttonVariants()}>
                 {t.chat.addProvider}
               </Link>
             }
@@ -236,7 +243,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
             body={t.chat.noAgentBody}
             action={
               can(session.role, "agents.create") ? (
-                <Link href="/agents/new" className={buttonClass({ variant: "primary" })}>
+                <Link href="/agents/new" className={buttonVariants()}>
                   {t.chat.createAgent}
                 </Link>
               ) : undefined
@@ -268,7 +275,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
               <h1 className="text-[22px] font-bold" dir="auto">
                 {f(t.chat.startTitle, { agent: activeAgent.name })}
               </h1>
-              <p className="mt-2 max-w-lg text-[15px] leading-7 text-muted">{t.chat.startBody}</p>
+              <p className="mt-2 max-w-lg text-[15px] leading-7 text-muted-foreground">{t.chat.startBody}</p>
             </div>
           )}
           <ol className="space-y-5">
@@ -287,7 +294,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
             ))}
           </ol>
           {stream.status === "reconnecting" && (
-            <p role="status" className="mt-4 text-[14px] text-muted">
+            <p role="status" className="mt-4 text-[14px] text-muted-foreground">
               {t.chat.reconnecting}
             </p>
           )}
@@ -310,7 +317,7 @@ export function ChatView({ conversationId: initialId }: { conversationId: string
           onStop={stream.stop}
         />
       ) : (
-        <p className="border-t border-line px-4 py-4 text-center text-[14px] text-muted">{t.chat.readOnly}</p>
+        <p className="border-t border-border px-4 py-4 text-center text-[14px] text-muted-foreground">{t.chat.readOnly}</p>
       )}
 
       <AgentSelectorModal
@@ -359,7 +366,6 @@ function ChatHeader({
 }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const toast = useToast();
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [title, setTitle] = useState(conv?.title ?? "");
@@ -370,12 +376,12 @@ function ChatHeader({
       qc.setQueryData(["conversation", c.id], c);
       void qc.invalidateQueries({ queryKey: conversationsKey });
     },
-    onError: () => toast(t.common.errorGeneric, "error"),
+    onError: () => toast.error(t.common.errorGeneric),
   });
   const del = useMutation({
     mutationFn: () => api(`/api/conversations/${conv!.id}`, { method: "DELETE" }),
     onSuccess: onDeleted,
-    onError: () => toast(t.common.errorGeneric, "error"),
+    onError: () => toast.error(t.common.errorGeneric),
   });
 
   const modelValue = conv?.providerConnectionId ? `${conv.providerConnectionId}::${conv.model ?? ""}` : "";
@@ -383,25 +389,25 @@ function ChatHeader({
   const agentModel = agent?.model || agentConn?.defaultModel;
 
   return (
-    <header className="flex min-h-14 flex-wrap items-center gap-2 border-b border-line px-3 py-2 sm:px-5">
-      <button
-        type="button"
+    <header className="flex min-h-14 flex-wrap items-center gap-2 border-b border-border px-3 py-2 sm:px-5">
+      <Button
+        variant="ghost"
         onClick={onPickAgent}
         disabled={!canWrite}
-        className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] px-2 hover:bg-surface-2 disabled:opacity-100"
+        className="px-2 disabled:opacity-100"
         aria-label={`${t.chat.changeAgent}: ${agent?.name ?? t.chat.pickAgent}`}
       >
         {agent ? <Seal name={agent.name} color={agent.avatar} size="sm" /> : null}
         <span className="text-[15px] font-semibold">{agent?.name ?? t.chat.pickAgent}</span>
-        {canWrite && <span className="text-[13px] text-muted">{t.chat.changeAgent}</span>}
-      </button>
+        {canWrite && <span className="text-[13px] font-normal text-muted-foreground">{t.chat.changeAgent}</span>}
+      </Button>
 
       {conv && canWrite && providers.length > 0 && (
         <div className="min-w-0">
-          <label htmlFor="model-select" className="sr-only">
+          <Label htmlFor="model-select" className="sr-only">
             {t.agents.model}
-          </label>
-          <Select
+          </Label>
+          <NativeSelect
             id="model-select"
             className="h-11 max-w-[15rem] text-[13px] sm:h-9"
             value={modelValue}
@@ -414,50 +420,52 @@ function ChatHeader({
               }
             }}
           >
-            <option value="">{`${t.agents.modelDefault}${agentModel ? ` (${agentModel})` : ""}`}</option>
+            <NativeSelectOption value="">{`${t.agents.modelDefault}${agentModel ? ` (${agentModel})` : ""}`}</NativeSelectOption>
             {providers.map((p) => (
-              <optgroup key={p.id} label={p.label}>
+              <NativeSelectOptGroup key={p.id} label={p.label}>
                 {p.models.map((m) => (
-                  <option key={m.id} value={`${p.id}::${m.id}`}>
+                  <NativeSelectOption key={m.id} value={`${p.id}::${m.id}`}>
                     {m.label ?? m.id}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </optgroup>
+              </NativeSelectOptGroup>
             ))}
-          </Select>
+          </NativeSelect>
         </div>
       )}
 
       <div className="ms-auto flex items-center gap-1">
-        {conv?.visibility === "workspace" && <span className="text-[13px] text-muted">{t.chat.shared}</span>}
+        {conv?.visibility === "workspace" && <span className="text-[13px] text-muted-foreground">{t.chat.shared}</span>}
         {conv && canWrite && (
-          <Menu
-            trigger={
-              <button type="button" aria-label={t.chat.rename} className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-control)] hover:bg-surface-2">
-                <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-              </button>
-            }
-          >
-            <MenuItem
-              onSelect={() => {
-                setTitle(conv.title);
-                setRenameOpen(true);
-              }}
-            >
-              {t.chat.rename}
-            </MenuItem>
-            <MenuItem onSelect={() => patch.mutate({ visibility: conv.visibility === "workspace" ? "private" : "workspace" })}>
-              {conv.visibility === "workspace" ? t.chat.unshare : t.chat.share}
-            </MenuItem>
-            <MenuSeparator />
-            <MenuItem danger onSelect={() => setDeleteOpen(true)}>
-              {t.chat.deleteChat}
-            </MenuItem>
-          </Menu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`${t.chat.rename}, ${t.chat.share}, ${t.chat.deleteChat}`}>
+                <MoreHorizontal className="size-5" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-48">
+              <DropdownMenuItem
+                className="min-h-11 sm:min-h-8"
+                onSelect={() => {
+                  setTitle(conv.title);
+                  setRenameOpen(true);
+                }}
+              >
+                {t.chat.rename}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="min-h-11 sm:min-h-8" onSelect={() => patch.mutate({ visibility: conv.visibility === "workspace" ? "private" : "workspace" })}>
+                {conv.visibility === "workspace" ? t.chat.unshare : t.chat.share}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" className="min-h-11 sm:min-h-8" onSelect={() => setDeleteOpen(true)}>
+                {t.chat.deleteChat}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen} title={t.chat.rename}>
+      <AppDialog open={renameOpen} onOpenChange={setRenameOpen} title={t.chat.rename}>
         <form
           className="space-y-4"
           onSubmit={(e) => {
@@ -465,23 +473,23 @@ function ChatHeader({
             if (title.trim()) patch.mutate({ title }, { onSuccess: () => setRenameOpen(false) });
           }}
         >
-          <Field label={t.chat.rename}>{(a) => <Input {...a} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} dir="auto" autoFocus />}</Field>
+          <FormField label={t.chat.rename}>{(a) => <Input {...a} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} dir="auto" autoFocus />}</FormField>
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setRenameOpen(false)}>{t.common.cancel}</Button>
-            <Button type="submit" variant="primary" disabled={patch.isPending || !title.trim()}>
+            <Button variant="outline" onClick={() => setRenameOpen(false)}>{t.common.cancel}</Button>
+            <Button type="submit" variant="default" disabled={patch.isPending || !title.trim()}>
               {t.common.save}
             </Button>
           </div>
         </form>
-      </Dialog>
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen} title={t.chat.deleteChat} description={t.common.confirmDelete}>
+      </AppDialog>
+      <AppDialog open={deleteOpen} onOpenChange={setDeleteOpen} title={t.chat.deleteChat} description={t.common.confirmDelete}>
         <div className="flex justify-end gap-2">
-          <Button onClick={() => setDeleteOpen(false)}>{t.common.cancel}</Button>
-          <Button variant="danger" onClick={() => del.mutate()} disabled={del.isPending}>
+          <Button variant="outline" onClick={() => setDeleteOpen(false)}>{t.common.cancel}</Button>
+          <Button variant="destructive" onClick={() => del.mutate()} disabled={del.isPending}>
             {t.common.delete}
           </Button>
         </div>
-      </Dialog>
+      </AppDialog>
     </header>
   );
 }
@@ -520,7 +528,7 @@ function RowView({
                 ? f(t.chat.toolWaiting, { tool: name })
                 : f(t.chat.toolRunning, { tool: name });
       return (
-        <p className={cn("text-[13px]", row.status === "failed" || row.status === "rejected" ? "text-danger" : "text-muted")} role="status">
+        <p className={cn("text-[13px]", row.status === "failed" || row.status === "rejected" ? "text-destructive" : "text-muted-foreground")} role="status">
           {text}
         </p>
       );
@@ -528,7 +536,7 @@ function RowView({
     case "delegation": {
       const text = row.status === "running" ? t.chat.delegating : row.status === "completed" ? t.chat.delegationDone : t.chat.delegationFailed;
       return (
-        <p className="flex items-center gap-2 text-[13px] text-muted" role="status">
+        <p className="flex items-center gap-2 text-[13px] text-muted-foreground" role="status">
           <Seal name={agentName(row.agentId)} color={agentColor(row.agentId)} size="sm" />
           {f(text, { agent: agentName(row.agentId) })}
         </p>
@@ -537,24 +545,30 @@ function RowView({
     case "handoff":
       return (
         <div className="flex items-center gap-3 py-1" role="separator" aria-label={f(row.manual ? t.chat.manualSwitch : t.chat.handoff, { agent: agentName(row.toAgentId) })}>
-          <span className="h-px flex-1 bg-line-strong" />
-          <span className="flex items-center gap-2 text-[13px] text-muted">
+          <Separator className="flex-1 bg-input" />
+          <span className="flex items-center gap-2 text-[13px] text-muted-foreground">
             <Seal name={agentName(row.toAgentId)} color={agentColor(row.toAgentId)} size="sm" />
             {f(row.manual ? t.chat.manualSwitch : t.chat.handoff, { agent: agentName(row.toAgentId) })}
           </span>
-          <span className="h-px flex-1 bg-line-strong" />
+          <Separator className="flex-1 bg-input" />
         </div>
       );
     case "approval":
       return <ApprovalCard row={row} agentName={agentName} toolLabel={toolLabel} />;
     case "reasoning":
       return (
-        <details className="text-[13px] text-muted">
-          <summary className="min-h-11 py-2 sm:min-h-0">{t.chat.reasoning}</summary>
-          <p className="whitespace-pre-wrap leading-6" dir="auto">
-            {row.text}
-          </p>
-        </details>
+        <Collapsible className="text-[13px] text-muted-foreground">
+          <CollapsibleTrigger asChild>
+            <Button variant="link" className="h-11 p-0 text-[13px] text-muted-foreground sm:h-auto sm:h-auto">
+              {t.chat.reasoning}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <p className="whitespace-pre-wrap leading-6" dir="auto">
+              {row.text}
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
       );
   }
 }
@@ -586,17 +600,17 @@ function MessageView({
 
   if (isUser) {
     return (
-      <div className="rounded-[var(--radius-panel)] bg-surface px-4 py-3">
-        <p className="mb-1 text-[12px] font-medium text-muted">{t.chat.you}</p>
+      <Card className="gap-1 rounded-lg border-0 px-4 py-3 shadow-none">
+        <p className="text-[12px] font-medium text-muted-foreground">{t.chat.you}</p>
         <p className="whitespace-pre-wrap text-[16px] leading-[1.85]" dir="auto">
           {row.content}
         </p>
         {row.status === "failed" && (
-          <p role="alert" className="mt-2 text-[13px] text-danger">
+          <p role="alert" className="mt-2 text-[13px] text-destructive">
             {t.common.errorGeneric}
           </p>
         )}
-      </div>
+      </Card>
     );
   }
 
@@ -611,35 +625,25 @@ function MessageView({
           <Markdown text={row.content} />
         </div>
       ) : streaming ? (
-        <p className="caret text-[15px] text-muted" aria-label={t.common.loading} />
+        <p className="caret text-[15px] text-muted-foreground" aria-label={t.common.loading} />
       ) : null}
       {row.status === "failed" && (
-        <p role="alert" className="mt-2 text-[14px] text-danger">
+        <p role="alert" className="mt-2 text-[14px] text-destructive">
           {row.errorMessage || t.chat.failed}
         </p>
       )}
-      {row.status === "cancelled" && <p className="mt-2 text-[13px] text-muted">{t.chat.stopped}</p>}
+      {row.status === "cancelled" && <p className="mt-2 text-[13px] text-muted-foreground">{t.chat.stopped}</p>}
       {!streaming && (
         <div className="mt-1 flex gap-1">
           {row.content && (
-            <button
-              type="button"
-              onClick={copy}
-              aria-label={copied ? t.common.copied : t.chat.copyMessage}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-surface-2 hover:text-ink sm:h-8 sm:w-8"
-            >
-              {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
-            </button>
+            <Button variant="ghost" size="icon-sm" onClick={copy} aria-label={copied ? t.common.copied : t.chat.copyMessage} className="text-muted-foreground">
+              {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+            </Button>
           )}
           {isLastAssistant && canRetry && (
-            <button
-              type="button"
-              onClick={onRetry}
-              aria-label={t.chat.retryMessage}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-surface-2 hover:text-ink sm:h-8 sm:w-8"
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            </button>
+            <Button variant="ghost" size="icon-sm" onClick={onRetry} aria-label={t.chat.retryMessage} className="text-muted-foreground">
+              <RotateCcw aria-hidden="true" />
+            </Button>
           )}
         </div>
       )}
@@ -649,36 +653,36 @@ function MessageView({
 
 function ApprovalCard({ row, agentName, toolLabel }: { row: Extract<Row, { kind: "approval" }>; agentName: (id: string | null) => string; toolLabel: (n: string) => string }) {
   const { t, f } = useI18n();
-  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const decide = async (d: "approve" | "reject") => {
     setBusy(true);
     try {
       await api(`/api/approvals/${row.id}/${d}`, { method: "POST" });
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : t.common.errorGeneric, "error");
+      toast.error(e instanceof ApiRequestError ? e.message : t.common.errorGeneric);
     } finally {
       setBusy(false);
     }
   };
   if (row.status !== "pending") {
-    return <p className="text-[13px] text-muted">{row.status === "expired" ? t.chat.approvalExpired : f(row.status === "approved" ? t.chat.toolDone : t.chat.toolRejected, { tool: toolLabel(row.toolName) })}</p>;
+    return <p className="text-[13px] text-muted-foreground">{row.status === "expired" ? t.chat.approvalExpired : f(row.status === "approved" ? t.chat.toolDone : t.chat.toolRejected, { tool: toolLabel(row.toolName) })}</p>;
   }
   return (
-    <section role="alertdialog" aria-labelledby={`ap-${row.id}`} className="rounded-[var(--radius-panel)] border border-line-strong bg-surface p-4">
-      <h3 id={`ap-${row.id}`} className="text-[15px] font-semibold">
+    <Alert role="alertdialog" aria-labelledby={`ap-${row.id}`} className="border-input bg-card">
+      <ShieldQuestion aria-hidden="true" />
+      <AlertTitle id={`ap-${row.id}`} className="text-[15px]">
         {f(t.chat.approvalTitle, { agent: agentName(row.agentId), tool: toolLabel(row.toolName) })}
-      </h3>
-      <p className="mt-1 text-[14px] text-muted">{t.chat.approvalBody}</p>
-      <div className="mt-3 flex gap-2">
-        <Button variant="primary" onClick={() => decide("approve")} disabled={busy}>
+      </AlertTitle>
+      <AlertDescription className="text-[14px]">{t.chat.approvalBody}</AlertDescription>
+      <div className="col-start-2 mt-3 flex gap-2">
+        <Button variant="default" onClick={() => decide("approve")} disabled={busy}>
           {t.chat.approve}
         </Button>
-        <Button onClick={() => decide("reject")} disabled={busy}>
+        <Button variant="outline" onClick={() => decide("reject")} disabled={busy}>
           {t.chat.reject}
         </Button>
       </div>
-    </section>
+    </Alert>
   );
 }
 
@@ -713,18 +717,18 @@ function Composer({
     setText("");
   };
   return (
-    <div className="border-t border-line bg-paper px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
+    <div className="border-t border-border bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
       <form
-        className="mx-auto flex max-w-3xl items-end gap-2 rounded-[var(--radius-panel)] border border-line-strong bg-surface p-2 focus-within:border-ink/40"
+        className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-input bg-card p-2 focus-within:border-foreground/40"
         onSubmit={(e) => {
           e.preventDefault();
           submit();
         }}
       >
-        <label htmlFor="composer" className="sr-only">
+        <Label htmlFor="composer" className="sr-only">
           {t.chat.placeholder}
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="composer"
           ref={ref}
           rows={1}
@@ -739,27 +743,16 @@ function Composer({
             }
           }}
           placeholder={t.chat.placeholder}
-          className="max-h-[220px] min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-[16px] leading-7 outline-none placeholder:text-muted/80"
+          className="max-h-[220px] min-h-11 flex-1 resize-none border-0 bg-transparent px-2 py-2.5 text-[16px] leading-7 shadow-none focus-visible:ring-0 md:text-[16px] dark:bg-transparent"
         />
         {busy ? (
-          <button
-            type="button"
-            onClick={onStop}
-            disabled={!canStop || stopping}
-            aria-label={stopping ? t.chat.stopping : t.chat.stop}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-ink text-paper hover:bg-ink/85 disabled:opacity-50"
-          >
-            <Square className="h-4 w-4" fill="currentColor" aria-hidden="true" />
-          </button>
+          <Button size="icon" className="size-11 shrink-0" onClick={onStop} disabled={!canStop || stopping} aria-label={stopping ? t.chat.stopping : t.chat.stop}>
+            <Square fill="currentColor" aria-hidden="true" />
+          </Button>
         ) : (
-          <button
-            type="submit"
-            disabled={disabled || !text.trim()}
-            aria-label={t.chat.send}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-accent text-accent-ink hover:bg-accent/85 active:bg-accent/75 disabled:opacity-40"
-          >
-            <ArrowUp className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <Button type="submit" variant="brand" size="icon" className="size-11 shrink-0" disabled={disabled || !text.trim()} aria-label={t.chat.send}>
+            <ArrowUp className="size-5" aria-hidden="true" />
+          </Button>
         )}
       </form>
     </div>

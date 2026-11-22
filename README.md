@@ -1,6 +1,6 @@
 # Agent Hub
 
-A multi-tenant workspace for building your own AI agents and talking to them. Users connect their own model providers, create agents with their own instructions, tools and limits, and chat with them over a streaming interface. A lead agent can delegate a task to a subagent or hand the conversation to another agent. Persian (RTL) is the default interface language; English is available from the account menu.
+A multi-tenant workspace for building your own AI agents and talking to them. Users connect their own model providers, create agents with their own instructions, tools and limits, and chat with them over a streaming interface. A lead agent can delegate a task to a subagent or hand the conversation to another agent. Persian (RTL) is the default interface language; English is available from the account menu. The interface is built from shadcn/ui components (see [DESIGN.md](DESIGN.md)).
 
 > فارسی: این برنامه فضای کاری چندکاربره برای ساخت عامل‌های هوش مصنوعی است. هر کاربر کلید API سرویس‌دهنده‌ی خودش را وصل می‌کند، عامل می‌سازد و با آن گفتگو می‌کند. رابط کاربری پیش‌فرض فارسی و راست‌به‌چپ است.
 

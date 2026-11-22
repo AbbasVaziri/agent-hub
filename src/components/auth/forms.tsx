@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -7,8 +8,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { authClient } from "@/lib/auth/client";
-import { Button } from "../ui/button";
-import { Field, Input } from "../ui/field";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/app/form-field";
+import { Input } from "@/components/ui/input";
 import { useI18n } from "../i18n-provider";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -17,7 +19,7 @@ function DevOutboxNote() {
   const { t } = useI18n();
   if (!isDev) return null;
   return (
-    <p className="mt-6 border-t border-line pt-4 text-[13px] leading-6 text-muted">
+    <p className="mt-6 border-t border-border pt-4 text-[13px] leading-6 text-muted-foreground">
       {t.auth.devOutbox}{" "}
       <Link className="underline underline-offset-4" href="/dev/outbox">
         {t.auth.openOutbox}
@@ -29,9 +31,9 @@ function DevOutboxNote() {
 function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-[var(--radius-control)] bg-danger-soft px-3 py-2 text-[14px] text-danger">
-      {message}
-    </p>
+    <Alert variant="destructive" className="bg-destructive-soft">
+      <AlertDescription className="text-[14px]">{message}</AlertDescription>
+    </Alert>
   );
 }
 
@@ -62,14 +64,14 @@ export function SignInForm() {
     <>
       <h1 className="text-[26px] font-bold">{t.auth.signInTitle}</h1>
       <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
-        <Field label={t.auth.email} error={form.formState.errors.email && t.auth.email}>
+        <FormField label={t.auth.email} error={form.formState.errors.email && t.auth.email}>
           {(a) => <Input {...a} type="email" autoComplete="email" dir="ltr" placeholder="email@example.com" {...form.register("email")} />}
-        </Field>
-        <Field label={t.auth.password}>
+        </FormField>
+        <FormField label={t.auth.password}>
           {(a) => <Input {...a} type="password" autoComplete="current-password" dir="ltr" {...form.register("password")} />}
-        </Field>
+        </FormField>
         <FormError message={error} />
-        <Button type="submit" variant="primary" className="w-full" disabled={form.formState.isSubmitting}>
+        <Button type="submit" variant="default" className="w-full" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? t.common.loading : t.auth.signIn}
         </Button>
       </form>
@@ -79,9 +81,9 @@ export function SignInForm() {
             {t.auth.forgot}
           </Link>
         </p>
-        <p className="text-muted">
+        <p className="text-muted-foreground">
           {t.auth.noAccount}{" "}
-          <Link className="text-ink underline underline-offset-4" href="/sign-up">
+          <Link className="text-foreground underline underline-offset-4" href="/sign-up">
             {t.auth.signUp}
           </Link>
         </p>
@@ -118,23 +120,23 @@ export function SignUpForm() {
     <>
       <h1 className="text-[26px] font-bold">{t.auth.signUpTitle}</h1>
       <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
-        <Field label={t.auth.name} error={errs.name && t.auth.name}>
+        <FormField label={t.auth.name} error={errs.name && t.auth.name}>
           {(a) => <Input {...a} autoComplete="name" placeholder={t.auth.name} {...form.register("name")} />}
-        </Field>
-        <Field label={t.auth.email} error={errs.email && t.auth.email}>
+        </FormField>
+        <FormField label={t.auth.email} error={errs.email && t.auth.email}>
           {(a) => <Input {...a} type="email" autoComplete="email" dir="ltr" placeholder="email@example.com" {...form.register("email")} />}
-        </Field>
-        <Field label={t.auth.password} hint={t.auth.passwordHint} error={errs.password && t.auth.passwordHint}>
+        </FormField>
+        <FormField label={t.auth.password} hint={t.auth.passwordHint} error={errs.password && t.auth.passwordHint}>
           {(a) => <Input {...a} type="password" autoComplete="new-password" dir="ltr" {...form.register("password")} />}
-        </Field>
+        </FormField>
         <FormError message={error} />
-        <Button type="submit" variant="primary" className="w-full" disabled={form.formState.isSubmitting}>
+        <Button type="submit" variant="default" className="w-full" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? t.common.loading : t.auth.signUp}
         </Button>
       </form>
-      <p className="mt-6 text-[14px] text-muted">
+      <p className="mt-6 text-[14px] text-muted-foreground">
         {t.auth.haveAccount}{" "}
-        <Link className="text-ink underline underline-offset-4" href="/sign-in">
+        <Link className="text-foreground underline underline-offset-4" href="/sign-in">
           {t.auth.signIn}
         </Link>
       </p>
@@ -155,13 +157,13 @@ export function VerifyEmailNotice() {
   return (
     <>
       <h1 className="text-[26px] font-bold">{t.auth.verifyTitle}</h1>
-      <p className="mt-4 text-[15px] leading-7 text-muted">{f(t.auth.verifyBody, { email: email || "…" })}</p>
+      <p className="mt-4 text-[15px] leading-7 text-muted-foreground">{f(t.auth.verifyBody, { email: email || "…" })}</p>
       {email && (
-        <Button className="mt-6" onClick={resend} disabled={state === "sending" || state === "sent"}>
+        <Button variant="outline" className="mt-6" onClick={resend} disabled={state === "sending" || state === "sent"}>
           {state === "sent" ? t.auth.verifyResent : t.auth.verifyResend}
         </Button>
       )}
-      {state === "error" && <p className="mt-3 text-[14px] text-danger">{t.common.errorGeneric}</p>}
+      {state === "error" && <p className="mt-3 text-[14px] text-destructive">{t.common.errorGeneric}</p>}
       <p className="mt-6 text-[14px]">
         <Link className="underline underline-offset-4" href="/sign-in">
           {t.auth.signIn}
@@ -190,10 +192,10 @@ export function ForgotPasswordForm() {
         </p>
       ) : (
         <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
-          <Field label={t.auth.email} error={form.formState.errors.email && t.auth.email}>
+          <FormField label={t.auth.email} error={form.formState.errors.email && t.auth.email}>
             {(a) => <Input {...a} type="email" autoComplete="email" dir="ltr" placeholder="email@example.com" {...form.register("email")} />}
-          </Field>
-          <Button type="submit" variant="primary" className="w-full" disabled={form.formState.isSubmitting}>
+          </FormField>
+          <Button type="submit" variant="default" className="w-full" disabled={form.formState.isSubmitting}>
             {t.auth.sendReset}
           </Button>
         </form>
@@ -228,15 +230,15 @@ export function ResetPasswordForm() {
           {t.auth.resetDone}
         </p>
       ) : state === "error" || !token ? (
-        <p role="alert" className="mt-6 text-[15px] text-danger">
+        <p role="alert" className="mt-6 text-[15px] text-destructive">
           {t.auth.resetInvalid}
         </p>
       ) : (
         <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
-          <Field label={t.auth.newPassword} hint={t.auth.passwordHint} error={form.formState.errors.password && t.auth.passwordHint}>
+          <FormField label={t.auth.newPassword} hint={t.auth.passwordHint} error={form.formState.errors.password && t.auth.passwordHint}>
             {(a) => <Input {...a} type="password" autoComplete="new-password" dir="ltr" {...form.register("password")} />}
-          </Field>
-          <Button type="submit" variant="primary" className="w-full" disabled={form.formState.isSubmitting}>
+          </FormField>
+          <Button type="submit" variant="default" className="w-full" disabled={form.formState.isSubmitting}>
             {t.auth.setPassword}
           </Button>
         </form>
